@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Авито — Умное сравнение в Избранном</title>
+  <link rel="preconnect" href="https://googleapis.com">
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
+  <link href="https://googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-outer: #eef1f5;
+      --bg-white: #ffffff;
+      --bg-gray: #f2f1f0;
+      --text-main: #000000;
+      --text-secondary: #757575;
+      --avito-blue: #00aaff;
+      --avito-blue-dark: #0088cc;
+      --avito-green: #00d95f;
+      --avito-green-hover: #00c254;
+      --badge-green-bg: #e6f9ee;
+      --badge-green-text: #008a3e;
+      --badge-orange-bg: #fff1e5;
+      --badge-orange-text: #d95d00;
+      --border-light: #e6e6e6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-outer);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: var(--text-main);
+    }
+
+    /* Рамка смартфона */
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: var(--bg-white);
+      border-radius: 46px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.16), 0 0 0 11px #1c1c1e, 0 0 0 13px #3a3a3c;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Статус-бар и Dynamic Island */
+    .status-bar {
+      height: 48px;
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--bg-white);
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    .dynamic-island {
+      width: 112px;
+      height: 30px;
+      background: #000000;
+      border-radius: 20px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 10px;
+    }
+
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    /* Контейнер экранов */
+    .screen {
+      flex: 1;
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+      background: var(--bg-white);
+      padding-bottom: 76px;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .screen::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Шапка Избранного */
+    .header-fav {
+      padding: 12px 16px 8px;
+    }
+
+    .header-fav h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 20px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .tab {
+      padding-bottom: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      color: var(--text-main);
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2.5px;
+      background: var(--text-main);
+      border-radius: 2px;
+    }
+
+    /* Умная плашка сравнения */
+    .smart-banner {
+      margin: 14px 16px 6px;
+      padding: 14px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #e8f7ff 0%, #f2f9ff 100%);
+      border: 1px solid #cceeff;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .banner-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .banner-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--avito-blue);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .banner-text h3 {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 3px;
+    }
+
+    .banner-text p {
+      font-size: 12.5px;
+      color: #4a5568;
+      line-height: 1.35;
+    }
+
+    .btn-compare-main {
+      width: 100%;
+      background: var(--avito-blue);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .btn-compare-main:hover {
+      background: var(--avito-blue-dark);
+    }
+
+    .btn-compare-main:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    /* Карточки в Избранном */
+    .fav-list {
+      padding: 8px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .fav-card {
+      display: flex;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-light);
+      position: relative;
+    }
+
+    .card-thumb {
+      width: 104px;
+      height: 104px;
+      border-radius: 14px;
+      background: var(--bg-gray);
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .phone-mockup-svg {
+      width: 44px;
+      height: 62px;
+      border-radius: 8px;
+      border: 2px solid #555;
+      margin-bottom: 4px;
+      position: relative;
+    }
+
+    .thumb-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .select-check {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1.5px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      color: transparent;
+      transition: all 0.15s;
+    }
+
+    .select-check.checked {
+      background: var(--avito-blue);
+      border-color: var(--avito-blue);
+      color: #ffffff;
+    }
+
+    .card-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-main);
+      line-height: 1.25;
+    }
+
+    .heart-icon {
+      color: #ff3b30;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .card-price {
+      font-size: 17px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .price-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: var(--badge-green-bg);
+      color: var(--badge-green-text);
+      margin-top: 3px;
+      width: fit-content;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    .card-meta {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metro-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Нижний таб-бар */
+    .tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 76px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      padding-top: 8px;
+      z-index: 15;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .tab-item.active {
+      color: var(--avito-blue);
+      font-weight: 600;
+    }
+
+    .tab-icon {
+      font-size: 19px;
+      line-height: 1;
+    }
+
+    .home-indicator {
+      position: absolute;
+      bottom: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 134px;
+      height: 5px;
+      background: #000000;
+      border-radius: 10px;
+      z-index: 30;
+    }
+
+    /* ЭКРАН 2: СРАВНЕНИЕ */
+    .comp-header {
+      padding: 8px 16px 12px;
+      border-bottom: 1px solid var(--border-light);
+      background: var(--bg-white);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .comp-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .btn-back {
+      background: var(--bg-gray);
+      border: none;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .comp-title-group h2 {
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .comp-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .diff-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-gray);
+      padding: 8px 12px;
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+
+    .diff-toggle-row span {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* Переключатель (Switch) */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+    }
+ .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #cbd5e1;
+      transition: .2s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--avito-blue);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    /* Таблица сравнения */
+    .comp-scroll {
+      overflow-x: auto;
+      padding: 12px 16px 24px;
+    }
+
+    .comp-grid {
+      display: grid;
+      gap: 8px;
+      min-width: 100%;
+    }
+
+    .comp-cols-3 {
+      grid-template-columns: repeat(3, minmax(112px, 1fr));
+    }
+
+    .comp-cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .col-header-card {
+      background: var(--bg-gray);
+      border-radius: 14px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      border: 1.5px solid transparent;
+    }
+
+    .col-header-card.best {
+      background: #f0fdf4;
+      border-color: #86efac;
+    }
+
+    .best-pill {
+      font-size: 10px;
+      font-weight: 700;
+      background: var(--avito-green);
+      color: #ffffff;
+      padding: 2px 6px;
+      border-radius: 6px;
+      width: fit-content;
+      margin-bottom: 6px;
+    }
+
+    .col-price {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .col-seller {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .btn-write-mini {
+      width: 100%;
+      background: var(--avito-green);
+      color: #ffffff;
+      border: none;
+      border-radius: 9px;
+      padding: 7px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-write-mini:hover {
+      background: var(--avito-green-hover);
+    }
+
+    .row-section {
+      margin-top: 12px;
+    }
+
+    .row-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .cell-box {
+      background: #fafafa;
+      border: 1px solid #eeeeee;
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 12.5px;
+      line-height: 1.3;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tag-good {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 600;
+      background: var(--badge-green-bg);
+      color: var(--badge-green-text);
+      padding: 2px 5px;
+      border-radius: 5px;
+      width: fit-content;
+    }
+
+    .tag-warn {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 600;
+      background: var(--badge-orange-bg);
+      color: var(--badge-orange-text);
+      padding: 2px 5px;
+      border-radius: 5px;
+      width: fit-content;
+    }
+
+    /* Модальное окно чата */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: flex-end;
+      z-index: 40;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .bottom-sheet {
+      width: 100%;
+      background: var(--bg-white);
+      border-radius: 24px 24px 0 0;
+      padding: 16px 18px 34px;
+      animation: slideUp 0.2s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: #d1d5db;
+      border-radius: 4px;
+      margin: 0 auto 14px;
+    }
+
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .sheet-header h4 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .btn-close-sheet {
+      background: var(--bg-gray);
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .sheet-hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .chat-textarea {
+      width: 100%;
+      border: 1.5px solid var(--avito-blue);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      line-height: 1.4;
+      resize: none;
+      height: 84px;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .btn-send-chat {
+      width: 100%;
+      background: var(--avito-green);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .toast {
+      position: absolute;
+      top: 58px;
+      left: 16px;
+      right: 16px;
+      background: #1f2937;
+      color: #ffffff;
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+<div class="phone-frame">
+  <div class="status-bar">
+    <span>12:45</span>
+    <div class="dynamic-island"></div>
+    <div class="status-icons">
+      <span>5G</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Сообщение отправлено продавцу</div>
+
+  <div class="screen active" id="screen-fav">
+    <div class="header-fav">
+      <h1>Избранное</h1>
+      <div class="tabs">
+        <div class="tab active">Объявления 3</div>
+        <div class="tab">Подборки</div>
+        <div class="tab">Поиски</div>
+      </div>
+    </div>
+
+    <div class="smart-banner">
+      <div class="banner-top">
+        <div class="banner-icon">⇄</div>
+        <div class="banner-text">
+          <h3>3 похожих iPhone 15 Pro, 128 ГБ</h3>
+          <p>Мы выделили ключевые отличия из описаний продавцов: АКБ, ремонты и комплект.</p>
+        </div>
+      </div>
+      <button class="btn-compare-main" id="btn-open-compare" onclick="openCompare()">
+        Сравнить условия (3)
+      </button>
+    </div>
+
+    <div class="fav-list" id="fav-list"></div>
+  </div>
+
+  <div class="screen" id="screen-compare">
+    <div class="comp-header">
+      <div class="comp-nav">
+        <button class="btn-back" onclick="closeCompare()">← Избранное</button>
+        <span style="font-size: 12px; color: var(--text-secondary);">iPhone 15 Pro, 128 ГБ</span>
+      </div>
+      <div class="comp-title-group">
+        <h2>Сравнение объявлений</h2>
+        <div class="comp-subtitle">Нюансы из текста описаний продавцов</div>
+      </div>
+      <div class="diff-toggle-row">
+        <span>Только различия</span>
+        <label class="switch">
+          <input type="checkbox" id="toggle-diff" onchange="renderComparison()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="comp-scroll">
+      <div id="comparison-container"></div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item">
+      <span class="tab-icon">🔍</span>
+      <span>Поиск</span>
+    </div>
+    <div class="tab-item active">
+      <span class="tab-icon">♥</span>
+      <span>Избранное</span>
+    </div>
+    <div class="tab-item">
+      <span class="tab-icon">⊕</span>
+      <span>Объявления</span>
+    </div>
+    <div class="tab-item">
+      <span class="tab-icon">💬</span>
+      <span>Сообщения</span>
+    </div>
+    <div class="tab-item">
+      <span class="tab-icon">👤</span>
+      <span>Профиль</span>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="chat-modal" onclick="closeModalOnBg(event)">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h4 id="modal-seller-title">Написать продавцу</h4>
+        <button class="btn-close-sheet" onclick="closeChatModal()">✕</button>
+      </div>
+      <p class="sheet-hint">Вопрос составлен с учётом деталей объявления — можно отредактировать:</p>
+      <textarea class="chat-textarea" id="chat-input"></textarea>
+      <button class="btn-send-chat" onclick="sendMessage()">Отправить сообщение</button>
+    </div>
+  </div>
+
+  <div class="home-indicator"></div>
+</div>
+
+<script>
+  const items = [
+    {
+      id: 1,
+      selected: true,
+      best: true,
+      title: 'iPhone 15 Pro, 128 ГБ, Natural Titanium',
+      price: '58 500 ₽',
+      priceTag: 'Хорошая цена',
+      priceNote: 'Оптимально',
+      priceBadgeType: 'good',
+      seller: 'Андрей',
+      rating: '★ 5,0 (14 отзывов)',
+      metro: 'м. Сокол',
+      metroColor: '#2dbe2c',
+      desc: 'АКБ 89%, полный комплект, носился в чехле и стекле.',
+      battery: '89%',
+      batteryNote: 'Норма',
+      batteryBadgeType: '',
+      repair: 'Не вскрывался',
+      repairBadgeType: 'good',
+      kit: 'Коробка, кабель',
+      memory: '128 ГБ (одинаково)',
+      colorPhone: '#b8b2a8',
+      promptQuestion: 'Здравствуйте, Андрей! Актуально? Подскажите, пожалуйста, телефон покупался новым и есть ли следы на гранях?'
+    },
+    {
+      id: 2,
+      selected: true,
+      best: false,
+      title: 'iPhone 15 Pro, 128 ГБ, Black Titanium',
+      price: '54 000 ₽',
+      priceTag: 'Ниже рынка',
+      priceNote: 'Дешевле на 4 500 ₽',
+      priceBadgeType: 'good',
+      seller: 'Ольга',
+      rating: '★ 4,7 (3 отзыва)',
+      metro: 'м. Академическая',
+      metroColor: '#f58220',
+      desc: 'Менялся экран на оригинал, АКБ 84%, возможен торг.',
+      battery: '84%',
+      batteryNote: 'Скоро замена',
+      batteryBadgeType: 'warn',
+      repair: 'Менялся экран',
+      repairBadgeType: 'warn',
+      kit: 'Только телефон',
+      memory: '128 ГБ (одинаково)',
+      colorPhone: '#3b3b3d',
+      promptQuestion: 'Здравствуйте, Ольга! Подскажите, экран меняли в официальном сервисе? Работает ли True Tone и Face ID?'
+    },
+    {
+      id: 3,
+      selected: true,
+      best: false,
+      title: 'iPhone 15 Pro, 128 ГБ, Blue Titanium',
+      price: '62 000 ₽',
+      priceTag: 'Рыночная цена',
+      priceNote: 'Дороже на 3 500 ₽',
+      priceBadgeType: '',
+      seller: 'Дмитрий',
+      rating: '★ 5,0 (28 отзывов)',
+      metro: 'м. Белорусская',
+      metroColor: '#2dbe2c',
+      desc: 'Идеал, АКБ 94%, чек из М.Видео, без торга.',
+      battery: '94%',
+      batteryNote: 'Лучший ресурс',
+      batteryBadgeType: 'good',
+      repair: 'Без ремонтов',
+      repairBadgeType: 'good',
+      kit: 'Коробка, чек М.Видео',
+      memory: '128 ГБ (одинаково)',
+      colorPhone: '#3d4b5c',
+      promptQuestion: 'Здравствуйте, Дмитрий! Готов забрать сегодня вечером у м. Белорусская. Чек из М.Видео бумажный или электронный?'
+    }
+  ];
+
+  function renderFavList() {
+    const listEl = document.getElementById('fav-list');
+    listEl.innerHTML = '';
+
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'fav-card';
+      card.innerHTML = `
+        <div class="card-thumb">
+          <div class="select-check ${item.selected ? 'checked' : ''}" onclick="toggleSelect(${item.id})" title="Выбрать для сравнения">✓</div>
+          <div class="phone-mockup-svg" style="background: ${item.colorPhone};"></div>
+          <span class="thumb-label">Фото продавца</span>
+        </div>
+        <div class="card-info">
+          <div>
+            <div class="card-title-row">
+              <div class="card-title">${item.title}</div>
+              <span class="heart-icon">♥</span>
+            </div>
+            <div class="card-price">${item.price}</div>
+            <div class="price-badge">${item.priceTag}</div>
+            <div class="card-desc">${item.desc}</div>
+          </div>
+          <div class="card-meta">
+            <span class="metro-dot" style="background: ${item.metroColor};"></span>
+            <span>${item.metro} · ${item.seller}</span>
+          </div>
+        </div>
+      `;
+      listEl.appendChild(card);
+    });
+
+    const selectedCount = items.filter(i => i.selected).length;
+    const btn = document.getElementById('btn-open-compare');
+    btn.textContent = selectedCount >= 2 ? `Сравнить условия (${selectedCount})` : 'Выберите минимум 2 объявления';
+    btn.disabled = selectedCount < 2;
+  }
+
+  function toggleSelect(id) {
+    const item = items.find(i => i.id === id);
+    if (item) {
+      item.selected = !item.selected;
+      renderFavList();
+    }
+  }
+
+  function openCompare() {
+    document.getElementById('screen-fav').classList.remove('active');
+    document.getElementById('screen-compare').classList.add('active');
+    renderComparison();
+  }
+
+  function closeCompare() {
+    document.getElementById('screen-compare').classList.remove('active');
+    document.getElementById('screen-fav').classList.add('active');
+  }
+
+  function renderComparison() {
+    const container = document.getElementById('comparison-container');
+    const selectedItems = items.filter(i => i.selected);
+    const onlyDiff = document.getElementById('toggle-diff').checked;
+    const colsClass = selectedItems.length === 2 ? 'comp-cols-2' : 'comp-cols-3';
+
+    let html = `<div class="comp-grid ${colsClass}">`;
+    selectedItems.forEach(item => {
+      html += `
+        <div class="col-header-card ${item.best ? 'best' : ''}">
+          <div>
+            ${item.best ? '<div class="best-pill">Лучший баланс</div>' : ''}
+            <div class="col-price">${item.price}</div>
+            <div class="col-seller">${item.seller}</div>
+          </div>
+          <button class="btn-write-mini" onclick="openChatModal(${item.id})">Написать</button>
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    const rows = [
+      {
+        label: 'Цена и выгода',
+        isSame: false,
+        render: item => `
+          <strong>${item.price}</strong>
+          ${item.priceNote ? `<span class="${item.priceBadgeType === 'good' ? 'tag-good' : ''}">${item.priceNote}</span>` : ''}
+        `
+      },
+      {
+        label: 'Батарея (АКБ)',
+        isSame: false,
+        render: item => `
+          <strong>${item.battery}</strong>
+          ${item.batteryBadgeType ? `<span class="tag-${item.batteryBadgeType}">${item.batteryNote}</span>` : `<span style="color:var(--text-secondary);font-size:11px;">${item.batteryNote}</span>`}
+        `
+      },
+      {
+        label: 'Ремонт и дефекты',
+        isSame: false,
+        render: item => `
+          <span class="tag-${item.repairBadgeType}">${item.repair}</span>
+        `
+      },
+      {
+        label: 'Комплект и чек',
+        isSame: false,
+        render: item => `<span>${item.kit}</span>`
+      },
+      {
+        label: 'Объём памяти',
+        isSame: true,
+        render: item => `<span style="color:var(--text-secondary);">${item.memory}</span>`
+      },
+      {
+        label: 'Метро',
+        isSame: false,
+        render: item => `<span>${item.metro}</span>`
+      },
+      {
+        label: 'Рейтинг продавца',
+        isSame: false,
+        render: item => `<span>${item.rating}</span>`
+      }
+    ];
+
+    rows.forEach(row => {
+      if (onlyDiff && row.isSame) return;
+      html += `
+        <div class="row-section">
+          <div class="row-label">${row.label}</div>
+          <div class="comp-grid ${colsClass}">
+            ${selectedItems.map(item => `<div class="cell-box">${row.render(item)}</div>`).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  function openChatModal(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    document.getElementById('modal-seller-title').textContent = `Написать · ${item.seller}`;
+    document.getElementById('chat-input').value = item.promptQuestion;
+    document.getElementById('chat-modal').classList.add('open');
+  }
+
+  function closeChatModal() {
+    document.getElementById('chat-modal').classList.remove('open');
+  }
+
+  function closeModalOnBg(e) {
+    if (e.target.id === 'chat-modal') {
+      closeChatModal();
+    }
+  }
+
+  function sendMessage() {
+    closeChatModal();
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
+  renderFavList();
+</script>
+</body>
+</html>
+
+
